@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+    background: linear-gradient(to left, #cdb4db, #a2d2ff);;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: #333;
+}
+
+.container {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 0px 15px 5px #939494;
+    margin-top: 70px;
+
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+form {
+    display: flex;
+    margin-bottom: 20px;
+    display: block;
+           
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+button[type="submit"] {
+     padding: 8px;
+     background-color: #ffcBdd;
+     color: #333;
+     border: none;
+     cursor: pointer;
+     border-radius: 10px;
+     font-weight: bold;
+    
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+li input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+button.delete {
+    background-color: hotpink;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+button.delete:hover {
+    background-color: hotpink;
+}
+button.edit {
+    background-color: hotpink;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+button.edit:hover {
+    background-color: hotpink;
+}
+
+button#clearCompleted {
+    background-color: hotpink;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+button#clearCompleted:hover {
+    background-color: hotpink;
+}
+
+    </style>
+</head>
+<body>
+    <h2>TO-DO LIST APPLICATION</h2>
+    <div class="container">
+        <h1>To-Do List</h1>
+        <form id="taskForm">
+            <input type="text" id="taskInput" placeholder="Add a new task..." required>
+            <button type="submit">Add Task</button>
+        </form>
+        <ul id="taskList"></ul>
+        <button id="clearCompleted">Clear Completed</button>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const taskForm = document.getElementById('taskForm');
+    const taskInput = document.getElementById('taskInput');
+    const taskList = document.getElementById('taskList');
+    const clearCompletedButton = document.getElementById('clearCompleted');
+
+    // Load tasks from local storage
+    // 3)
+    const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    // Function to save tasks to local storage
+    // 2)
+    function saveTasks() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // Function to add a new task
+    // 3)
+    function addTask(taskText) {
+        const task = {
+            id: Date.now(),
+            text: taskText,
+            completed: false,
+        };
+        tasks.push(task);
+        saveTasks();
+        displayTasks();
+    }
+
+    // Function to delete a task
+    // 4)
+    function deleteTask(taskId) {
+        const taskIndex = tasks.findIndex(task => task.id === taskId);
+        if (taskIndex !== -1) {
+            tasks.splice(taskIndex, 1);
+            saveTasks();
+            displayTasks();
+        }
+    }
+
+    // Function to toggle task completion status
+    // 5)
+    function toggleTaskStatus(taskId) {
+        const task = tasks.find(task => task.id === taskId);
+        if (task) {
+            task.completed = !task.completed;
+            saveTasks();
+            displayTasks();
+        }
+    }
+
+    // Function to edit a task
+    // 8)
+    function editTask(taskId, newText) {
+        const task = tasks.find(task => task.id === taskId);
+        if (task) {
+            task.text = newText;
+            saveTasks();
+            displayTasks();
+        }
+    }
+
+    // Function to display tasks in the UI
+    // 9)
+    function displayTasks() {
+        taskList.innerHTML = '';
+        tasks.forEach(task => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                <span class="task-text">${task.text}</span>
+                <button class="delete">Delete</button>
+                <button class="edit">Edit</button>
+            `;
+            const checkbox = listItem.querySelector('input[type="checkbox"]');
+            const deleteButton = listItem.querySelector('.delete');
+            const editButton = listItem.querySelector('.edit');
+            const taskText = listItem.querySelector('.task-text');
+
+            checkbox.addEventListener('change', () => toggleTaskStatus(task.id));
+            deleteButton.addEventListener('click', () => deleteTask(task.id));
+
+            let isEditing = false;
+            editButton.addEventListener('click', () => {
+                if (isEditing) {
+                    // Save the edited task
+                    editTask(task.id, taskText.textContent);
+                    editButton.textContent = 'Edit';
+                } else {
+                    // Start editing the task
+                    taskText.contentEditable = true;
+                    taskText.focus();
+                    editButton.textContent = 'Save';
+                }
+                isEditing = !isEditing;
+            });
+
+            taskText.addEventListener('blur', () => {
+                // Save the edited task when the input field loses focus
+                if (isEditing) {
+                    editTask(task.id, taskText.textContent);
+                    editButton.textContent = 'Edit';
+                    isEditing = false;
+                }
+            });
+
+            taskList.appendChild(listItem);
+        });
+    }
+
+    // Function to clear completed tasks
+    // 10)
+    function clearCompletedTasks() {
+        tasks.forEach((task, index) => {
+            if (task.completed) {
+                tasks.splice(index, 1);
+            }
+        });
+        saveTasks();
+        displayTasks();
+    }
+
+    // Event listener for adding a new task
+    taskForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const taskText = taskInput.value.trim();
+        if (taskText) {
+            addTask(taskText);
+            taskInput.value = '';
+        }
+    });
+
+    // Event listener for clearing completed tasks
+    // 11)
+    clearCompletedButton.addEventListener('click', clearCompletedTasks);
+
+    // Initial display of tasks
+    displayTasks();
+});
+
+
+    </script>
+</body>
+</html>
